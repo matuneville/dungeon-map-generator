@@ -36,14 +36,10 @@ function love.load()
         resizable = true
     })
 
-    --[[local g = SquareGraph(3)
-    g:createAdjMatrixCustom(g.N)
-    local tree = g:bfsTree(1)
-    debugPrint(g)
-    print()
-    debugPrint(tree)]]
     
-    gMap = Map(6)
+    gMap = Map(4)
+    --local g = SquareGraph(3)
+    --debugPrint(gMap.graph)
 end
 
 

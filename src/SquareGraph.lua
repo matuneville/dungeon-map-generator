@@ -1,5 +1,8 @@
 --[[
-    ##### Square Graph class #####
+    ##### Square graph #####
+    
+    Graph class that represents a matrix in which each node is
+    a position of the matrix and is neighbor only to the adjacent cells
     
     ---------------------
     - Created by Neville
@@ -8,126 +11,113 @@
 
 SquareGraph = Class()
 
+-- class constructor
+--
 function SquareGraph:init(n)
+    -- number of nodes
+    self.n = n
     self.N = n*n
+
+    -- number of edges
+    self.m = math.random(self.N-1,
+       self.N-1 + ((2*(n-1)*self.n - self.N-1)/2))
+    -- it necessarily need at least n-1 edges so as to be a connected graph
+
+    -- adjacency matrix
     self.adj = {}
+    self:createAdjZeros()
+    self:createAdj(self.m)
 end
 
--- Creates a graph in which each node is neighbour to each adjacent cell in a n*n matrix
+
+-- creates the adjacency matrix with the N nodes and m edges, randomly placed according to the restrictions
 --
-function SquareGraph:createAdjMatrix()
+function SquareGraph:createAdj(m)
+    local placedEdges = 0
+    local isConnected = true
+
+    while m > 0 do
+
+        isConnected = placedEdges >= self.N-1 and true or false
+
+        -- take random node and calc its Y level in the matrix
+        local i = math.random(1, self.N)
+
+        local counter = i
+        local y = 1
+        while counter > self.n do
+            y = y + 1
+            counter = counter - self.n
+        end
+
+        -- collect neighbors of node i
+        local neighbors = {}
+        if i+1 <= y*self.n then
+            table.insert(neighbors, i+1)
+        end
+        if i-1 > (y-1)*self.n then
+            table.insert(neighbors, i-1)
+        end
+        if i-self.n > 0 then
+            table.insert(neighbors, i-self.n)
+        end
+        if i+self.n <= self.N then
+            table.insert(neighbors, i+self.n)
+        end
+
+        -- take random neighbor of node i
+        local j = neighbors[math.random(1, #neighbors)]
+
+        -- place edge (i,j) if it does not create a cycle and was not previously placed
+        if self.adj[i][j] == 0 then
+            self.adj[i][j] = 1
+            self.adj[j][i] = 1
+            if not isConnected and self:hasCycle(i) then
+                self.adj[i][j] = 0
+                self.adj[j][i] = 0
+                goto continue
+            end
+            m = m - 1
+            placedEdges = placedEdges+1
+        end
+        ::continue::
+    end
+end
+
+
+-- returns true if the graph contains a cycle
+-- approach: basically executes a DFS and if a node has already been visited then a cycle exists 
+--
+function SquareGraph:hasCycle(startNode)
+    local visited = {}
+
+    local function dfs(node, father)
+        visited[node] = true
+
+        for i = 1, self.N do
+            if self.adj[node][i] == 1 and visited[i] and i ~= father then
+                return true -- cycle found
+            elseif self.adj[node][i] == 1 and not visited[i] then
+                if dfs(i, node) then
+                    return true -- if there is a cycle in the tree, stop
+                end
+            end
+        end
+
+        return false
+    end
+
+    return dfs(startNode, 0)
+end
+
+-- fills a N*N matrix with zeros (graph without edges)
+--
+function SquareGraph:createAdjZeros()
     for i=1, self.N do
         local row = {}
         for j=1, self.N do
             row[j] = 0
         end
         self.adj[i] = row
-    end
-end
-
--- Creates a graph in which each node is neighbour to each adjacent cell in a n*n matrix
---
-function SquareGraph:createAdjMatrixCustom()
-    local n = math.sqrt(self.N)
-
-    for i=1, self.N do
-        local row = {}
-        for j=1, self.N do
-            row[j] = 0
-
-            local k = i
-            local l = 1
-            while k > n do
-                l = l + 1
-                k = k - n
-            end
-
-            if i+1 <= l*n then
-                row[i+1] = 1
-            end
-            if i-1 > (l-1)*n then
-                row[i-1] = 1
-            end
-            if i-n > 0 then
-                row[i-n] = 1
-            end
-            if i+n <= self.N then
-                row[i+n] = 1
-            end
-        end
-        self.adj[i] = row
-    end
-end
-
-
-function SquareGraph:addEdge(x, y)
-    self.adj[x][y] = 1
-    self.adj[y][x] = 1
-end
-
-
-function SquareGraph:dfsTree(startNode)
-    local visited = {}  -- To keep track of visited nodes
-    local dfsTree = SquareGraph(math.sqrt(self.N))  -- Create a new graph for the DFS tree
-    dfsTree:createAdjMatrix()
-
-    local function dfs(node)
-        --print(node)
-        visited[node] = true
-
-        -- define a new order to traverse the neighbors
-        local order = {}
-        for i=1, self.N do
-            order[i] = i
-        end
-        shuffle(order)
-
-        for i=1, self.N do
-            local neighbor = order[i]
-            if self.adj[node][neighbor] == 1 and not visited[neighbor] then
-                -- Add edge to dfsTree
-                dfsTree:addEdge(node, neighbor)
-                dfs(neighbor)  -- Recurse on the neighbor
-            end
-        end
-    end
-
-    dfs(startNode)  -- Start DFS from the specified node (e.g., root)
-
-    return dfsTree
-end
-
-
-function SquareGraph:bfsTree(startNode)
-    local visited = {}  -- To keep track of visited nodes
-    local bfsTree = SquareGraph(math.sqrt(self.N))  -- Create a new graph for the BFS tree
-    bfsTree:createAdjMatrix()
-
-    local queue = {}  -- Initialize a queue for BFS traversal
-    table.insert(queue, startNode)  -- Enqueue the start node
-
-    while #queue > 0 do
-        local node = table.remove(queue, 1)  -- Dequeue the front node
-        visited[node] = true
-
-        for neighbor = 1, self.N do
-            if self.adj[node][neighbor] == 1 and not visited[neighbor] then
-                -- Add edge to bfsTree
-                bfsTree:addEdge(node, neighbor)
-                table.insert(queue, neighbor)  -- Enqueue the neighbor
-                visited[neighbor] = true  -- Mark the neighbor as visited
-            end
-        end
-    end
-
-    return bfsTree
-end
-
-
-function shuffle(array)
-    local n = #array
-    for i = n, 2, -1 do
-        local j = math.random(i) -- Random index from 1 to i
-        array[i], array[j] = array[j], array[i] -- Swap elements
     end
 end

@@ -13,13 +13,9 @@ function Map:init(mapSize)
     self.N = mapSize*mapSize
 
     self.graph = SquareGraph(mapSize)
-    self.graph:createAdjMatrixCustom()
 
     self.rooms = self:createRooms()
 
-    self.graphDepth = self.graph:dfsTree(1)
-
-    self.graphBreadth = self.graph:bfsTree(1)
 end
 
 function Map:render()
@@ -29,7 +25,7 @@ function Map:render()
     for i=1, self.N do
         for j=1, self.N do
             -- draw depth paths
-            if self.graphDepth.adj[i][j] == 1 then
+            if self.graph.adj[i][j] == 1 then
                 if self.rooms[i].row == self.rooms[j].row then
                     love.graphics.rectangle(
                         'fill',
@@ -51,10 +47,11 @@ function Map:render()
 
     -- render rooms
     for i=1, self.N do
-        love.graphics.setColor(0, self.rooms[i].type == 1 and 0.7 or 0.9, 0, 1)
-        self.rooms[i]:render()
+        if self:hasNeighbours(i) then
+            love.graphics.setColor(0, self.rooms[i].type == 1 and 0.7 or 0.9, 0, 1)
+            self.rooms[i]:render()
+        end
     end
-    --debugPrint(self.graphDepth)
 end
 
 
@@ -71,4 +68,13 @@ function Map:createRooms()
         end
     end
     return rooms
+end
+
+function Map:hasNeighbours(room)
+    for i=1, self.N, 1 do
+        if self.graph.adj[room][i] == 1 then
+            return true
+        end
+    end
+    return false
 end
