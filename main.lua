@@ -36,10 +36,7 @@ function love.load()
         resizable = true
     })
 
-    
-    gMap = Map(4)
-    --local g = SquareGraph(3)
-    --debugPrint(gMap.graph)
+    gMap = Map(7)
 end
 
 

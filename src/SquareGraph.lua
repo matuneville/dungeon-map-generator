@@ -27,6 +27,8 @@ function SquareGraph:init(n)
     self.adj = {}
     self:createAdjZeros()
     self:createAdj(self.m)
+    
+    --self.bfsTree = self:bfsTree(1)
 end
 
 
@@ -120,4 +122,30 @@ function SquareGraph:createAdjZeros()
         end
         self.adj[i] = row
     end
+end
+
+
+function SquareGraph:bfsTree(startNode)
+    local visited = {}  -- To keep track of visited nodes
+    local bfsTree = SquareGraph(math.sqrt(self.N))  -- Create a new graph for the BFS tree
+    bfsTree:createAdjMatrix()
+
+    local queue = {}  -- Initialize a queue for BFS traversal
+    table.insert(queue, startNode)  -- Enqueue the start node
+
+    while #queue > 0 do
+        local node = table.remove(queue, 1)  -- Dequeue the front node
+        visited[node] = true
+
+        for neighbor = 1, self.N do
+            if self.adj[node][neighbor] == 1 and not visited[neighbor] then
+                -- Add edge to bfsTree
+                bfsTree:addEdge(node, neighbor)
+                table.insert(queue, neighbor)  -- Enqueue the neighbor
+                visited[neighbor] = true  -- Mark the neighbor as visited
+            end
+        end
+    end
+
+    return bfsTree
 end
